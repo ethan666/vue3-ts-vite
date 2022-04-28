@@ -1,29 +1,79 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from "vue-router";
-import HelloWorld from "@/components/HelloWorld.vue";
+<script setup>
+import { ref, nextTick } from "vue";
+import { svgAsPngUri } from "@/utils/saveSvgAsPng";
+// import { saveSvgAsPng, svgAsPngUri } from "save-svg-as-png";
+import { saveAs } from "file-saver";
+import { changeDpiBlob } from "changedpi";
+import { getSvgFile } from "@/api/order";
+import { uriToBlob } from "@/utils/index";
+import MySvg from "@/assets/svg/b.svg";
+import Svg2 from "oslllo-svg2";
+
+const svgData = ref("");
+const svgUrl =
+  "http://gxzn-free.oss-cn-zhangjiakou.aliyuncs.com/model-data-center/test-model/fenmian/a.svg";
+// const svgUrl =
+//   "http://gxzn.free.obs.glinsunai.com/custom/2022/4/26/custom-20220426-220341-740-330aa660ec14416c809556b391bfdc29.svg";
+// const svgUrl =
+//   "http://gxzn.free.obs.glinsunai.com/custom/2022/4/26/custom-20220426-220341-740-330aa660ec14416c809556b391bfdc29.svg";
+
+const download = async () => {
+  const { data } = await getSvgFile(svgUrl);
+  svgData.value = data;
+  nextTick(async () => {
+    const svgDom = document.querySelector("#svg-to-jpg-box svg");
+    const w = Number.parseFloat(svgDom.getAttribute("width"));
+    const h = Number.parseFloat(svgDom.getAttribute("height"));
+    const width = (w * 150) / 25.4;
+    const height = (h * 150) / 25.4;
+    const uri = await svgAsPngUri(svgDom, {
+      // width: w,
+      // height: h,
+      scale: 75 / 25.4,
+      backgroundColor: "#fff",
+    });
+    const blob = uriToBlob(uri);
+    const nb = await changeDpiBlob(blob, 150);
+    saveAs(nb, `排料文件-${2}.png`);
+  });
+};
+
+const download1 = async () => {
+  const svgDom = document.querySelector("#aaa");
+  const w = Number.parseFloat(svgDom.getAttribute("width"));
+  const h = Number.parseFloat(svgDom.getAttribute("height"));
+  svgDom.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  await new Promise((resolve, reject) => {
+    setTimeout(resolve, 1000);
+  });
+  const width = (w * 150) / 25.4;
+  const height = (h * 150) / 25.4;
+  // const uri = await svgAsPngUri(svgDom, { width, height });
+  const uri = await svgAsPngUri(svgDom);
+  const blob = uriToBlob(uri);
+  const nb = await changeDpiBlob(blob, 150);
+  saveAs(nb, `排料文件-${2}.png`);
+};
+
+const download3 = () => {
+  Svg2(svgUrl)
+    .png()
+    .toFile("./path/to/save/example.png")
+    .then(() => {
+      console.log("done");
+    })
+    .catch((error) => {
+      throw error;
+    });
+};
 </script>
 
 <template>
-  <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <HelloWorld msg="Hello world. You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <div>
+    <button @click="download3">下载</button>
+    <div id="svg-to-jpg-box" v-html="svgData"></div>
+    <!-- <MySvg id="aaa" /> -->
+  </div>
 </template>
 
 <style>
@@ -63,7 +113,7 @@ a,
 nav {
   width: 100%;
   font-size: 12px;
-  text-align: center;
+  /* text-align: center; */
   margin-top: 2rem;
 }
 
@@ -87,8 +137,8 @@ nav a:first-of-type {
 
 @media (min-width: 1024px) {
   body {
-    display: flex;
-    place-items: center;
+    /* display: flex;
+    place-items: center; */
   }
 
   #app {
